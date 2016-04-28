@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"><title>Proto-Type</title><link rel="stylesheet" href="proto-type-Dateien/style.css"><link href="proto-type-Dateien/css.css" rel="stylesheet" type="text/css"></head><body><h1>Proto-Type</h1><p>Welcome to Proto-Type</p><button onclick="clearEditor();">reset</button><div id="speed"></div><br><div id="editor" style="font-size: 22px"><span onkeydown="currspanKeydown(event)" id="currspan" contenteditable="true">Proto-Type Here..</span></div><script>var currspanId = "currspan";
+var editorId = "editor";
+
+var lastSpaceTime = -1; // last time that enter or space was pressed
+
+// places the caret at the end of the text of the element
+function placeCaretAtEnd(el) {
+    el.focus();
+    if (typeof window.getSelection != "undefined"
+            && typeof document.createRange != "undefined") {
+        var range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    } else if (typeof document.body.createTextRange != "undefined") {
+        var textRange = document.body.createTextRange();
+        textRange.moveToElementText(el);
+        textRange.collapse(false);
+        textRange.select();
+    }
+}
+
+function getCurrSpan() {
+    return document.getElementById(currspanId);
+}
+
+function getEditor() {
+    return document.getElementById(editorId);
+}
+
+// resets the editor to the initial content
+function clearEditor() {
+    var editor = getEditor();
+    while (editor.firstChild) {
+        editor.removeChild(editor.firstChild);
+    }
+    appendNewCurrentSpan();
+    getCurrSpan().innerHTML = "Proto-Type Here..";
+    placeCaretAtEnd(getCurrSpan());
+}
+
+function createNewCurrentSpan() {
+    var newCurrSpan = document.createElement("span");
+    newCurrSpan.setAttribute("id", currspanId);
+    newCurrSpan.setAttribute("contentEditable", "true");
+    newCurrSpan.setAttribute("onkeydown", "currspanKeydown(event)");
+    return newCurrSpan;
+}
+
+function appendNewCurrentSpan() {
+    var oldCurrSpan = getCurrSpan();
+    var newCurrSpan = createNewCurrentSpan();
+    getEditor().appendChild(newCurrSpan);
+    newCurrSpan.focus();
+    if (oldCurrSpan) {
+        oldCurrSpan.removeAttribute("id");
+    }
+}
+
+function removeCurrentSpan() {
+    var oldCurrSpan = getCurrSpan();
+    var newCurrSpan = oldCurrSpan.previousElementSibling;
+    newCurrSpan.setAttribute("id", currspanId);
+    placeCaretAtEnd(newCurrSpan);
+    oldCurrSpan.parentNode.removeChild(oldCurrSpan);
+}
+
+function currspanKeydown(event) {
+    if (lastSpaceTime < 0) {
+        lastSpaceTime = event.timeStamp; // init time if space was not yet pressed
+    }
+    if (event.key === " " || event.key === "Enter") {
+        // calculate how much time the typing of the last word took per letter
+        var currTime = +event.timeStamp; // + converts the date to an int
+        var timediff = currTime - lastSpaceTime;
+        lastSpaceTime = currTime;
+        var normalizedDiff = timediff / getCurrSpan().innerHTML.length; // TODO: divide by number of keystrokes (including backspaces) instead of text length
+        document.getElementById("speed").innerHTML = normalizedDiff; // for debugging
+        updateFont(normalizedDiff);
+        appendNewCurrentSpan();
+    } else if (event.key === "Backspace") {
+        if (getCurrSpan().innerHTML.length == 0) {
+            // remove the current span if it is empty
+            removeCurrentSpan();
+        }
+    }
+}
+
+function updateFont(value) {
+    var newFont;
+    if (value < 70) {
+        newFont = "Covered By Your Grace,Viner Hand ITC"; // fast typing
+    } else if (value < 130) {
+        newFont = "Noticia Text,Comic Sans MS"; // medium typing
+    } else {
+        newFont = "Source Sans Pro,Times New Roman"; // slow typing
+    }
+    getCurrSpan().style.fontFamily = newFont;
+}
+
+// init the editor
+clearEditor();
+placeCaretAtEnd(getCurrSpan());</script></body></html>
